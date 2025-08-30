@@ -3,66 +3,38 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Circuit Warmup — Dispatcher Toolkit</title>
+  <title>Fitness & Nutrition — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
     <a href="../index.html" class="text-blue-600 underline">&larr; Back to Home</a>
 
-    <h1 class="mt-4 text-2xl font-bold">Circuit Warmup</h1>
-    <p class="mt-2 text-slate-600">Follow each movement in order. Tap “Start” to run a countdown timer for the duration.</p>
+    <h1 class="mt-4 text-2xl font-bold">Fitness &amp; Nutrition</h1>
+    <p class="mt-2 text-slate-600">Pick a quick tool. Each one is designed to take under two minutes.</p>
 
-    <!-- Warmup steps -->
-    <div id="steps" class="mt-6 space-y-4">
-      <!-- Step template will be injected here -->
-    </div>
+    <section class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Warmup -->
+      <a href="./warmup.html" class="group block bg-white rounded-xl p-5 shadow border border-slate-200 hover:shadow-md hover:-translate-y-0.5 transition">
+        <h2 class="text-lg font-semibold">Circuit Warmup</h2>
+        <p class="mt-2 text-sm text-slate-600">Guided sequence with simple timers.</p>
+        <p class="mt-3 text-sm text-blue-600 group-hover:underline">Open →</p>
+      </a>
+
+      <!-- Push Day -->
+      <a href="./push.html" class="group block bg-white rounded-xl p-5 shadow border border-slate-200 hover:shadow-md hover:-translate-y-0.5 transition">
+        <h2 class="text-lg font-semibold">Push Day</h2>
+        <p class="mt-2 text-sm text-slate-600">Chest, shoulders, triceps — coming soon.</p>
+        <p class="mt-3 text-sm text-blue-600 group-hover:underline">Open →</p>
+      </a>
+
+      <!-- Pull Day -->
+      <a href="./pull.html" class="group block bg-white rounded-xl p-5 shadow border border-slate-200 hover:shadow-md hover:-translate-y-0.5 transition">
+        <h2 class="text-lg font-semibold">Pull Day</h2>
+        <p class="mt-2 text-sm text-slate-600">Back, biceps — coming soon.</p>
+        <p class="mt-3 text-sm text-blue-600 group-hover:underline">Open →</p>
+      </a>
+    </section>
   </main>
-
-  <script>
-    // List of steps
-    const steps = [
-      { name: "Knee Hug to Lunge; Jog back", time: 30 },
-      { name: "Catchers Squat to Hamstring Stretch; Jog back", time: 30 },
-      { name: "Step Over the Fence Forward; Skip back", time: 30 },
-      { name: "Step Over the Fence Backward; Backward skip back", time: 30 },
-      { name: "Side Shuffle with Arm Swing", time: 15 },
-      { name: "Side Shuffle with Arm Swing (same direction)", time: 15 },
-      { name: "McGill’s Big 3 — Modified Curl-Up x3/leg, Bird Dog x3/side, Side Bridge x10s/side", time: 120 },
-      { name: "Shin Box Hip Extension", time: 30 }
-    ];
-
-    const container = document.getElementById("steps");
-
-    steps.forEach((step, i) => {
-      const card = document.createElement("div");
-      card.className = "bg-white rounded-xl shadow p-4 border border-slate-200";
-
-      card.innerHTML = `
-        <h2 class="text-lg font-semibold">${i+1}. ${step.name}</h2>
-        <p class="text-sm text-slate-600">Time: ${step.time} seconds</p>
-        <div class="mt-2 flex items-center gap-2">
-          <button class="start-btn bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition text-sm">Start</button>
-          <span class="countdown text-slate-700 font-mono"></span>
-        </div>
-      `;
-
-      container.appendChild(card);
-
-      const btn = card.querySelector(".start-btn");
-      const countdown = card.querySelector(".countdown");
-
-      btn.addEventListener("click", () => {
-        let remaining = step.time;
-        countdown.textContent = remaining + "s";
-
-        const interval = setInterval(() => {
-          remaining--;
-          countdown.textContent = remaining > 0 ? remaining + "s" : "Done!";
-          if (remaining <= 0) clearInterval(interval);
-        }, 1000);
-      });
-    });
-  </script>
 </body>
 </html>
