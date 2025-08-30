@@ -38,4 +38,231 @@
           <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Lat Pulldown">Lat Pulldown</button>
           <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Bent Over Barbell Row">Bent Over Barbell Row</button>
           <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Dumbbell Row">Dumbbell Row</button>
-          <button class="exercise" data-group="back" data-select
+          <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Cable Row">Cable Row</button>
+        </div>
+      </div>
+
+      <!-- Hams/Glutes/Lower Back (single) -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Hams / Glutes / Lower Back</h2>
+          <span class="text-xs text-slate-500">Pick 1</span>
+        </div>
+        <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="exercise" data-group="posterior" data-select="single" data-name="Romanian Deadlift">Romanian Deadlift</button>
+          <button class="exercise" data-group="posterior" data-select="single" data-name="Good Mornings">Good Mornings</button>
+          <button class="exercise" data-group="posterior" data-select="single" data-name="Kettlebell Swings">Kettlebell Swings</button>
+          <button class="exercise" data-group="posterior" data-select="single" data-name="Leg Curl">Leg Curl</button>
+        </div>
+      </div>
+
+      <!-- Biceps (single) -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Biceps</h2>
+          <span class="text-xs text-slate-500">Pick 1</span>
+        </div>
+        <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="exercise" data-group="biceps" data-select="single" data-name="Dumbbell Curl">Dumbbell Curl</button>
+          <button class="exercise" data-group="biceps" data-select="single" data-name="Hammer Curl">Hammer Curl</button>
+          <button class="exercise" data-group="biceps" data-select="single" data-name="Preacher Curl">Preacher Curl</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary / Actions -->
+    <section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow p-4">
+      <h3 class="text-base font-semibold">Your selection</h3>
+      <ul id="summary" class="mt-2 text-sm text-slate-700 list-disc ml-5 space-y-1">
+        <li>Upper-Mid Back: —</li>
+        <li>Hams/Glutes/Lower Back: —</li>
+        <li>Biceps: —</li>
+      </ul>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="copyPlan" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Copy Plan</button>
+        <button id="resetAll" class="bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm hover:bg-slate-300">Reset</button>
+      </div>
+      <p id="copiedNote" class="mt-2 text-xs text-green-600 hidden">Copied to clipboard!</p>
+      <p id="limitNote" class="mt-2 text-xs text-rose-600 hidden">Limit reached (2). Deselect one to pick another.</p>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'dt_pull_selection_v1';
+
+    // selection state:
+    // back -> array (max 2)
+    // posterior -> string or null
+    // biceps -> string or null
+    function loadSelection() {
+      try {
+        const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return s || { back: [], posterior: null, biceps: null };
+      } catch {
+        return { back: [], posterior: null, biceps: null };
+      }
+    }
+    function saveSelection(s) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    }
+
+    let selections = loadSelection();
+
+    // Base styling for buttons
+    document.querySelectorAll('.exercise').forEach(btn => {
+      btn.type = 'button';
+      btn.classList.add('border','border-slate-200','bg-white','rounded-lg','px-3','py-2','text-left','text-sm','transition');
+    });
+
+    function renderGroupSingle(group) {
+      const buttons = [...document.querySelectorAll(`.exercise[data-group="${group}"]`)];
+      const sel = selections[group] || null;
+
+      buttons.forEach(btn => {
+        const isSelected = (btn.dataset.name === sel);
+        btn.className = [
+          'exercise',
+          isSelected
+            ? 'border-2 border-blue-600 bg-blue-50 text-blue-800'
+            : (sel
+                ? 'border border-slate-200 bg-slate-50 text-slate-400 strike-soft opacity-70'
+                : 'border border-slate-200 bg-white text-slate-800'),
+          'rounded-lg px-3 py-2 text-left text-sm transition'
+        ].join(' ');
+        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      });
+    }
+
+    function renderGroupMulti(group, limit) {
+      const buttons = [...document.querySelectorAll(`.exercise[data-group="${group}"]`)];
+      const arr = selections[group] || [];
+      const atLimit = arr.length >= limit;
+
+      // count UI
+      document.getElementById('backCount').textContent = arr.length.toString();
+
+      buttons.forEach(btn => {
+        const isSelected = arr.includes(btn.dataset.name);
+        btn.className = [
+          'exercise',
+          isSelected
+            ? 'border-2 border-blue-600 bg-blue-50 text-blue-800'
+            : (atLimit
+                ? 'border border-slate-200 bg-slate-50 text-slate-400 strike-soft opacity-70'
+                : 'border border-slate-200 bg-white text-slate-800'),
+          'rounded-lg px-3 py-2 text-left text-sm transition'
+        ].join(' ');
+        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      });
+
+      // show/hide limit note
+      const note = document.getElementById('limitNote');
+      if (atLimit) {
+        // only show if user attempted a third pick; we toggle it during click handler
+        // keep hidden by default after render
+      } else {
+        note.classList.add('hidden');
+      }
+    }
+
+    function renderSummary() {
+      const summary = document.getElementById('summary');
+      const back = (selections.back && selections.back.length) ? selections.back.join(', ') : '—';
+      const posterior = selections.posterior || '—';
+      const biceps = selections.biceps || '—';
+      summary.innerHTML = `
+        <li>Upper-Mid Back: ${back}</li>
+        <li>Hams/Glutes/Lower Back: ${posterior}</li>
+        <li>Biceps: ${biceps}</li>
+      `;
+    }
+
+    // Initial render
+    renderGroupMulti('back', 2);
+    renderGroupSingle('posterior');
+    renderGroupSingle('biceps');
+    renderSummary();
+
+    // Click handling
+    document.querySelectorAll('.exercise').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        const mode = btn.dataset.select; // 'single' or 'multi'
+        const name = btn.dataset.name;
+
+        if (mode === 'single') {
+          selections[group] = (selections[group] === name) ? null : name;
+          saveSelection(selections);
+          renderGroupSingle(group);
+          renderSummary();
+          return;
+        }
+
+        // multi
+        const limit = parseInt(btn.dataset.limit || '2', 10);
+        const arr = selections[group] || [];
+        const idx = arr.indexOf(name);
+        const note = document.getElementById('limitNote');
+
+        if (idx > -1) {
+          // deselect
+          arr.splice(idx, 1);
+          selections[group] = arr;
+          saveSelection(selections);
+          renderGroupMulti(group, limit);
+          renderSummary();
+          note.classList.add('hidden');
+          return;
+        }
+
+        if (arr.length < limit) {
+          arr.push(name);
+          selections[group] = arr;
+          saveSelection(selections);
+          renderGroupMulti(group, limit);
+          renderSummary();
+          note.classList.add('hidden');
+        } else {
+          // at limit; brief feedback
+          note.classList.remove('hidden');
+          note.classList.add('animate-pulse');
+          setTimeout(() => note.classList.remove('animate-pulse'), 600);
+        }
+      });
+    });
+
+    // Copy / Reset
+    function buildPlanText() {
+      return [
+        'Push/Pull Split — Pull Day',
+        'Select two Upper-Mid Back exercises, and one from each other group.',
+        '',
+        `Upper-Mid Back: ${(selections.back && selections.back.length) ? selections.back.join(', ') : '—'}`,
+        `Hams/Glutes/Lower Back: ${selections.posterior || '—'}`,
+        `Biceps: ${selections.biceps || '—'}`
+      ].join('\n');
+    }
+
+    document.getElementById('copyPlan').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(buildPlanText());
+        const note = document.getElementById('copiedNote');
+        note.classList.remove('hidden');
+        setTimeout(() => note.classList.add('hidden'), 1600);
+      } catch {
+        alert('Could not copy to clipboard.');
+      }
+    });
+
+    document.getElementById('resetAll').addEventListener('click', () => {
+      selections = { back: [], posterior: null, biceps: null };
+      saveSelection(selections);
+      renderGroupMulti('back', 2);
+      renderGroupSingle('posterior');
+      renderGroupSingle('biceps');
+      renderSummary();
+      document.getElementById('limitNote').classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
