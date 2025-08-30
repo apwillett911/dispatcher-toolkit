@@ -5,12 +5,206 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Push Day — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* strike-through that keeps layout nice on mobile */
+    .strike-soft { text-decoration: line-through; text-decoration-thickness: 0.08em; text-decoration-color: rgba(100,116,139,.6); }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
     <a href="./index.html" class="text-blue-600 underline">&larr; Back to Fitness</a>
-    <h1 class="mt-4 text-2xl font-bold">Push Day</h1>
-    <p class="mt-2 text-slate-600">Coming soon: a quick push routine (chest, shoulders, triceps).</p>
+
+    <h1 class="mt-4 text-2xl font-bold">Push/Pull Split — Push Day</h1>
+    <p class="mt-2 text-slate-600">
+      Select <span class="font-semibold">one exercise</span> from each muscle group. Be sure to vary your selections over time.
+    </p>
+
+    <!-- Helper tip -->
+    <div class="mt-4 bg-white rounded-xl border border-slate-200 shadow p-4 text-sm text-slate-600">
+      <p class="leading-relaxed">
+        Tap an exercise to select it. Other options in that group will grey out. Tap the selected exercise again to clear your choice.
+      </p>
+    </div>
+
+    <!-- Groups -->
+    <section id="groups" class="mt-6 space-y-6">
+      <!-- Chest -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Chest</h2>
+          <span class="text-xs text-slate-500">Pick 1</span>
+        </div>
+        <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="exercise" data-group="chest" data-name="Bench Press">Bench Press</button>
+          <button class="exercise" data-group="chest" data-name="Incline Bench Press">Incline Bench Press</button>
+          <button class="exercise" data-group="chest" data-name="Dumbbell Bench Press">Dumbbell Bench Press</button>
+          <button class="exercise" data-group="chest" data-name="Dumbbell Fly">Dumbbell Fly</button>
+        </div>
+      </div>
+
+      <!-- Shoulders -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Shoulders</h2>
+          <span class="text-xs text-slate-500">Pick 1</span>
+        </div>
+        <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="exercise" data-group="shoulders" data-name="Overhead Barbell Press">Overhead Barbell Press</button>
+          <button class="exercise" data-group="shoulders" data-name="Dumbbell Shoulder Press">Dumbbell Shoulder Press</button>
+          <button class="exercise" data-group="shoulders" data-name="Dumbbell Lateral Raise">Dumbbell Lateral Raise</button>
+          <button class="exercise" data-group="shoulders" data-name="Upright Row">Upright Row</button>
+        </div>
+      </div>
+
+      <!-- Triceps -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Triceps</h2>
+          <span class="text-xs text-slate-500">Pick 1</span>
+        </div>
+        <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="exercise" data-group="triceps" data-name="Skull Crusher">Skull Crusher</button>
+          <button class="exercise" data-group="triceps" data-name="Dumbbell Kickback">Dumbbell Kickback</button>
+          <button class="exercise" data-group="triceps" data-name="Overhead Triceps Extension">Overhead Triceps Extension</button>
+          <button class="exercise" data-group="triceps" data-name="Cable Push-down">Cable Push-down</button>
+        </div>
+      </div>
+
+      <!-- Quads -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Quads</h2>
+          <span class="text-xs text-slate-500">Pick 1</span>
+        </div>
+        <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="exercise" data-group="quads" data-name="Barbell Squat">Barbell Squat</button>
+          <button class="exercise" data-group="quads" data-name="Leg Press">Leg Press</button>
+          <button class="exercise" data-group="quads" data-name="Leg Extension">Leg Extension</button>
+          <button class="exercise" data-group="quads" data-name="Split Squat">Split Squat</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary / Actions -->
+    <section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow p-4">
+      <h3 class="text-base font-semibold">Your selection</h3>
+      <ul id="summary" class="mt-2 text-sm text-slate-700 list-disc ml-5 space-y-1">
+        <li>Chest: —</li>
+        <li>Shoulders: —</li>
+        <li>Triceps: —</li>
+        <li>Quads: —</li>
+      </ul>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="copyPlan" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Copy Plan</button>
+        <button id="resetAll" class="bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm hover:bg-slate-300">Reset</button>
+      </div>
+      <p id="copiedNote" class="mt-2 text-xs text-green-600 hidden">Copied to clipboard!</p>
+    </section>
   </main>
+
+  <script>
+    // --- Config ---
+    const STORAGE_KEY = 'dt_push_selection_v1'; // namespaced localStorage key
+    const GROUPS = ['chest','shoulders','triceps','quads'];
+
+    // Utility: load/save selections
+    const loadSelection = () => {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    };
+    const saveSelection = (sel) => localStorage.setItem(STORAGE_KEY, JSON.stringify(sel));
+
+    // Apply UI state for a group: selected button highlighted; others greyed/struck
+    function renderGroup(group) {
+      const buttons = [...document.querySelectorAll(`.exercise[data-group="${group}"]`)];
+      const sel = selections[group] || null;
+      buttons.forEach(btn => {
+        const isSelected = (btn.dataset.name === sel);
+        btn.className = [
+          'exercise',
+          isSelected
+            ? 'border-2 border-blue-600 bg-blue-50 text-blue-800'
+            : (sel
+                ? 'border border-slate-200 bg-slate-50 text-slate-400 strike-soft opacity-70'
+                : 'border border-slate-200 bg-white text-slate-800')
+          ,
+          'rounded-lg px-3 py-2 text-left text-sm transition'
+        ].join(' ');
+        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      });
+    }
+
+    // Update summary list
+    function renderSummary() {
+      const summary = document.getElementById('summary');
+      const lines = {
+        chest: selections.chest || '—',
+        shoulders: selections.shoulders || '—',
+        triceps: selections.triceps || '—',
+        quads: selections.quads || '—'
+      };
+      summary.innerHTML = `
+        <li>Chest: ${lines.chest}</li>
+        <li>Shoulders: ${lines.shoulders}</li>
+        <li>Triceps: ${lines.triceps}</li>
+        <li>Quads: ${lines.quads}</li>
+      `;
+    }
+
+    // Build copy text
+    function buildPlanText() {
+      return [
+        'Push/Pull Split — Push Day',
+        'Select at least one from each muscle group.',
+        '',
+        `Chest: ${selections.chest || '—'}`,
+        `Shoulders: ${selections.shoulders || '—'}`,
+        `Triceps: ${selections.triceps || '—'}`,
+        `Quads: ${selections.quads || '—'}`
+      ].join('\n');
+    }
+
+    // Initial selections from storage
+    let selections = loadSelection();
+
+    // Wire up all exercise buttons
+    document.querySelectorAll('.exercise').forEach(btn => {
+      btn.type = 'button'; // prevent form behavior
+      btn.classList.add('border','border-slate-200','bg-white','rounded-lg','px-3','py-2','text-left','text-sm','transition');
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        const name = btn.dataset.name;
+        // Toggle: if clicking the selected option, clear it; else set it
+        selections[group] = (selections[group] === name) ? null : name;
+        saveSelection(selections);
+        renderGroup(group);
+        renderSummary();
+      });
+    });
+
+    // Render all groups on load
+    GROUPS.forEach(renderGroup);
+    renderSummary();
+
+    // Copy plan
+    document.getElementById('copyPlan').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(buildPlanText());
+        const note = document.getElementById('copiedNote');
+        note.classList.remove('hidden');
+        setTimeout(() => note.classList.add('hidden'), 1600);
+      } catch {
+        alert('Could not copy to clipboard.');
+      }
+    });
+
+    // Reset all
+    document.getElementById('resetAll').addEventListener('click', () => {
+      selections = { chest:null, shoulders:null, triceps:null, quads:null };
+      saveSelection(selections);
+      GROUPS.forEach(renderGroup);
+      renderSummary();
+    });
+  </script>
 </body>
 </html>
