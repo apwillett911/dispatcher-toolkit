@@ -5,12 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pull Day — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .strike-soft { text-decoration: line-through; text-decoration-thickness: 0.08em; text-decoration-color: rgba(100,116,139,.6); }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
     <a href="./index.html" class="text-blue-600 underline">&larr; Back to Fitness</a>
-    <h1 class="mt-4 text-2xl font-bold">Pull Day</h1>
-    <p class="mt-2 text-slate-600">Coming soon: a quick pull routine (back, biceps).</p>
-  </main>
-</body>
-</html>
+
+    <h1 class="mt-4 text-2xl font-bold">Push/Pull Split — Pull Day</h1>
+    <p class="mt-2 text-slate-600">
+      Select <span class="font-semibold">two Upper-Mid Back</span> exercises, and <span class="font-semibold">one</span> from each of the other groups.
+      Be sure to vary your selections over time.
+    </p>
+
+    <div class="mt-4 bg-white rounded-xl border border-slate-200 shadow p-4 text-sm text-slate-600">
+      <p class="leading-relaxed">
+        Tap to select. Tap again to deselect. When a group’s limit is reached, remaining options grey out.
+      </p>
+    </div>
+
+    <!-- Groups -->
+    <section id="groups" class="mt-6 space-y-6">
+      <!-- Upper-Mid Back (multi-select, limit 2) -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Upper-Mid Back</h2>
+          <span class="text-xs text-slate-500"><span id="backCount">0</span>/2 selected</span>
+        </div>
+        <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Pull-ups">Pull-ups</button>
+          <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Lat Pulldown">Lat Pulldown</button>
+          <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Bent Over Barbell Row">Bent Over Barbell Row</button>
+          <button class="exercise" data-group="back" data-select="multi" data-limit="2" data-name="Dumbbell Row">Dumbbell Row</button>
+          <button class="exercise" data-group="back" data-select
