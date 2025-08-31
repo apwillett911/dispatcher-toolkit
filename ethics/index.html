@@ -3,14 +3,249 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ethics — Dispatcher Toolkit</title>
+  <title>Cognitive Trap Quiz — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .strike-soft { text-decoration: line-through; text-decoration-thickness: 0.08em; text-decoration-color: rgba(100,116,139,.6); }
+    .choice { border-width: 1px; }
+    .choice:disabled { opacity: .9; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <a href="../index.html" class="text-blue-600 underline">&larr; Back</a>
-    <h1 class="mt-4 text-2xl font-bold">Fitness &amp; Nutrition</h1>
-    <p class="mt-2 text-slate-600">Tools coming soon: Circuit Warmup, Push/Pull Splits.</p>
+    <a href="../index.html" class="text-blue-600 underline">&larr; Back to Home</a>
+
+    <h1 class="mt-4 text-2xl font-bold">Cognitive Trap Quiz</h1>
+    <p class="mt-2 text-slate-600">
+      Classic “gotcha” problems where fast, intuitive <em>(System&nbsp;1)</em> answers are tempting—but slow, deliberate
+      <em>(System&nbsp;2)</em> thinking wins. Pick an answer, then read the short explanation.
+    </p>
+
+    <!-- Quiz card -->
+    <section id="card" class="mt-6 bg-white rounded-2xl border border-slate-200 shadow">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div class="text-sm text-slate-500">
+          Question <span id="qNum">1</span> of <span id="qTotal">5</span>
+        </div>
+        <div class="text-sm text-slate-500">
+          Score: <span id="score">0</span>
+        </div>
+      </div>
+
+      <div class="p-5">
+        <h2 id="question" class="text-lg font-semibold"></h2>
+        <div id="choices" class="mt-4 grid grid-cols-1 gap-3"></div>
+
+        <!-- Explanation area (hidden until answered) -->
+        <div id="explain" class="mt-5 hidden">
+          <div class="rounded-xl bg-blue-50 border border-blue-200 p-4">
+            <p id="explainTitle" class="text-blue-900 font-semibold"></p>
+            <p id="explainBody" class="mt-2 text-blue-900/90 text-sm leading-relaxed"></p>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button id="nextBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Next</button>
+            <button id="restartBtn" class="bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm hover:bg-slate-300 hidden">Restart</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footnote -->
+    <p class="mt-4 text-xs text-slate-500">
+      Tip: If an answer feels “obvious,” that’s a hint to pause and run the slower checklist in your head.
+    </p>
   </main>
+
+  <script>
+    const STORAGE_KEY = 'dt_ethics_quiz_v1';
+
+    // Quiz data
+    const QUESTIONS = [
+      {
+        q: "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?",
+        choices: ["10¢", "5¢", "1¢", "15¢"],
+        correct: 1, // 5¢
+        explainTitle: "System 1’s trap: 10¢ feels right — but it’s wrong.",
+        explainBody:
+`If the ball were 10¢ and the bat $1.00 more, the bat would be $1.10, totaling $1.20. Too high.
+Let x be the ball. Then bat = x + $1.00 and x + (x + 1.00) = 1.10 → 2x = 0.10 → x = 0.05 ($0.05).
+The “10¢” answer pops out fast (System 1). Slowing down (System 2) fixes the arithmetic.`
+      },
+      {
+        q: "Linda is 31, bright, and outspoken. She majored in philosophy and is concerned with social justice. Which is more probable?",
+        choices: [
+          "Linda is a bank teller.",
+          "Linda is a bank teller and active in the feminist movement."
+        ],
+        correct: 0,
+        explainTitle: "Conjunction fallacy: adding details can’t raise probability.",
+        explainBody:
+`“Bank teller AND feminist” is a subset of “bank teller.” Subsets are always less or equally probable.
+System 1 is swayed by a vivid story; System 2 checks the logic of probabilities.`
+      },
+      {
+        q: "A disease affects 1% of people. A test is 90% sensitive and 90% specific. You test positive. What is the chance you actually have the disease?",
+        choices: ["~90%", "~50%", "~9%", "~1%"],
+        correct: 2, // ~9%
+        explainTitle: "Base-rate neglect: the 90% isn’t the answer.",
+        explainBody:
+`Think in 1,000 people: 10 have the disease; ~9 test positive. Of the 990 healthy, ~99 test positive (10% false positives).
+Total positives ≈ 108; true positives ≈ 9. So ~9/108 ≈ 8–9%.
+System 1 grabs the test accuracy; System 2 accounts for the low base rate.`
+      },
+      {
+        q: "Two coin-flip sequences of length 6 are shown. Which is more likely?",
+        choices: [
+          "H T H T T H",
+          "H H H H T H",
+          "They are equally likely"
+        ],
+        correct: 2,
+        explainTitle: "Representativeness: ‘looks random’ ≠ ‘more likely’.",
+        explainBody:
+`Every specific 6-flip sequence has the same probability (1/64).
+System 1 prefers the one that looks “more mixed.” System 2 recalls the actual math: equal likelihood.`
+      },
+      {
+        q: "The Monty Hall problem: pick 1 of 3 doors (1 has a prize). Host opens a different door with no prize and offers you to switch. Best odds if you…",
+        choices: ["Stay (1/2 either way)", "Switch (2/3 if you switch)", "Doesn’t matter (1/3 either way)"],
+        correct: 1,
+        explainTitle: "Conditioning intuition: switching doubles your chance.",
+        explainBody:
+`Initially you had a 1/3 chance of being right. The host’s reveal packs the other 2/3 onto the remaining closed door.
+System 1 resists; System 2 tracks conditional probabilities → switching ≈ 2/3 to win.`
+      }
+    ];
+
+    // State
+    let idx = 0;
+    let score = 0;
+    let answered = false;
+
+    // DOM
+    const qNum = document.getElementById('qNum');
+    const qTotal = document.getElementById('qTotal');
+    const scoreEl = document.getElementById('score');
+    const questionEl = document.getElementById('question');
+    const choicesEl = document.getElementById('choices');
+    const explain = document.getElementById('explain');
+    const explainTitle = document.getElementById('explainTitle');
+    const explainBody = document.getElementById('explainBody');
+    const nextBtn = document.getElementById('nextBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    qTotal.textContent = QUESTIONS.length;
+
+    // Storage helpers
+    function loadState() {
+      try {
+        const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!s) return;
+        idx = s.idx ?? 0;
+        score = s.score ?? 0;
+      } catch {}
+    }
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ idx, score }));
+    }
+    function clearState() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    function renderQuestion() {
+      const q = QUESTIONS[idx];
+      qNum.textContent = (idx + 1).toString();
+      scoreEl.textContent = score.toString();
+      questionEl.textContent = q.q;
+      explain.classList.add('hidden');
+      restartBtn.classList.add('hidden');
+      answered = false;
+
+      // build choices
+      choicesEl.innerHTML = '';
+      q.choices.forEach((label, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'choice rounded-lg px-3 py-2 text-left text-sm border border-slate-200 bg-white hover:bg-slate-50 transition';
+        btn.textContent = label;
+        btn.setAttribute('data-i', i.toString());
+        btn.addEventListener('click', () => selectAnswer(i));
+        choicesEl.appendChild(btn);
+      });
+    }
+
+    function selectAnswer(i) {
+      if (answered) return;
+      answered = true;
+
+      // disable all, colorize
+      const q = QUESTIONS[idx];
+      const buttons = Array.from(document.querySelectorAll('.choice'));
+      buttons.forEach((b, j) => {
+        b.disabled = true;
+        const base = 'choice rounded-lg px-3 py-2 text-left text-sm transition ';
+        if (j === q.correct) {
+          b.className = base + 'border-2 border-green-600 bg-green-50 text-green-800';
+        } else if (j === i && i !== q.correct) {
+          b.className = base + 'border-2 border-rose-600 bg-rose-50 text-rose-800 strike-soft';
+        } else {
+          b.className = base + 'border border-slate-200 bg-slate-50 text-slate-400 strike-soft opacity-70';
+        }
+      });
+
+      // score + explanation
+      if (i === q.correct) score++;
+      scoreEl.textContent = score.toString();
+
+      explainTitle.textContent = q.explainTitle;
+      explainBody.textContent = q.explainBody;
+      explain.classList.remove('hidden');
+
+      // last question?
+      if (idx === QUESTIONS.length - 1) {
+        nextBtn.textContent = 'See Results';
+      } else {
+        nextBtn.textContent = 'Next';
+      }
+
+      saveState();
+    }
+
+    nextBtn.addEventListener('click', () => {
+      if (!answered) return; // require an answer
+      if (idx < QUESTIONS.length - 1) {
+        idx++;
+        saveState();
+        renderQuestion();
+      } else {
+        // results view inside the same card
+        const total = QUESTIONS.length;
+        const pct = Math.round((score / total) * 100);
+        questionEl.textContent = `Results: ${score} / ${total} correct (${pct}%)`;
+        choicesEl.innerHTML = '';
+        explainTitle.textContent = 'System 1 vs System 2 — what you just felt';
+        explainBody.innerHTML = `Fast, fluent answers can feel right—and often are—but they’re also where traps live.
+        When stakes are high, pause and run a quick System&nbsp;2 check: <strong>Facts → Policy → Risk → Alternatives → Document</strong>.
+        Use this instinct to slow down when the “obvious” answer is tugging at you.`;
+        explain.classList.remove('hidden');
+        nextBtn.classList.add('hidden');
+        restartBtn.classList.remove('hidden');
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      idx = 0;
+      score = 0;
+      clearState();
+      nextBtn.classList.remove('hidden');
+      renderQuestion();
+    });
+
+    // Boot
+    loadState();
+    if (idx >= QUESTIONS.length) { idx = 0; score = 0; clearState(); }
+    renderQuestion();
+  </script>
 </body>
 </html>
