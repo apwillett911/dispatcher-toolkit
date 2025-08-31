@@ -3,14 +3,88 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stress First Aid — Dispatcher Toolkit</title>
+  <title>Stress Continuum — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <a href="../index.html" class="text-blue-600 underline">&larr; Back</a>
-    <h1 class="mt-4 text-2xl font-bold">Fitness &amp; Nutrition</h1>
-    <p class="mt-2 text-slate-600">Tools coming soon: Circuit Warmup, Push/Pull Splits.</p>
+    <a href="../index.html" class="text-blue-600 underline">&larr; Back to Home</a>
+
+    <h1 class="mt-4 text-2xl font-bold">Stress Continuum</h1>
+    <p class="mt-2 text-slate-600">
+      Stress isn’t all-or-nothing. The continuum helps you notice when you’re sliding from <span class="text-green-700 font-semibold">Ready</span> toward
+      <span class="text-yellow-600 font-semibold">Reacting</span>, <span class="text-orange-600 font-semibold">Injured</span>, or <span class="text-red-600 font-semibold">Ill</span>.
+      Stress First Aid is most effective in the middle zones—Yellow and Orange—to move you back toward Green.
+    </p>
+
+    <!-- Slider -->
+    <div class="mt-8">
+      <input type="range" id="slider" min="0" max="3" step="1" value="0"
+        class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+      <div class="flex justify-between text-sm mt-2 font-medium">
+        <span class="text-green-700">Green</span>
+        <span class="text-yellow-600">Yellow</span>
+        <span class="text-orange-600">Orange</span>
+        <span class="text-red-600">Red</span>
+      </div>
+    </div>
+
+    <!-- Display -->
+    <section id="display" class="mt-8 bg-white rounded-2xl border border-slate-200 shadow p-5">
+      <h2 id="stateTitle" class="text-lg font-bold text-green-700">Ready (Green)</h2>
+      <p id="stateDesc" class="mt-2 text-sm text-slate-700"></p>
+      <h3 class="mt-4 font-semibold">What to do now</h3>
+      <p id="stateAction" class="mt-1 text-sm text-slate-700"></p>
+    </section>
   </main>
+
+  <script>
+    const states = [
+      {
+        title: "Ready (Green)",
+        color: "text-green-700",
+        desc: "Steady, effective, in control. Stress is present but manageable. You're functioning at baseline.",
+        action: "Maintain your routines: exercise, sleep, nutrition. Stay connected socially. Keep monitoring yourself."
+      },
+      {
+        title: "Reacting (Yellow)",
+        color: "text-yellow-600",
+        desc: "Irritable, trouble sleeping, distracted, muscle tension. You’re still functional but starting to slide.",
+        action: "Do a short reset: breathing drill, brief walk, check-in with a peer. Name the stress out loud to defuse it."
+      },
+      {
+        title: "Injured (Orange)",
+        color: "text-orange-600",
+        desc: "Persistent anxiety, nightmares, withdrawal, mistakes on calls. Stress symptoms linger and impair work/life.",
+        action: "Don’t go alone—reach out to peer support, supervisor, or trusted person. Use Stress First Aid steps: Cover, Calm, Connect, Competence, Confidence."
+      },
+      {
+        title: "Ill (Red)",
+        color: "text-red-600",
+        desc: "Symptoms are severe, long-lasting, and disabling: PTSD, depression, substance abuse. Professional care needed.",
+        action: "Seek formal help—medical or mental health professional. Tell a peer or leader if you need immediate support."
+      }
+    ];
+
+    const slider = document.getElementById('slider');
+    const titleEl = document.getElementById('stateTitle');
+    const descEl = document.getElementById('stateDesc');
+    const actionEl = document.getElementById('stateAction');
+
+    function renderState(i) {
+      const s = states[i];
+      titleEl.textContent = s.title;
+      titleEl.className = "text-lg font-bold " + s.color;
+      descEl.textContent = s.desc;
+      actionEl.textContent = s.action;
+    }
+
+    slider.addEventListener('input', e => {
+      renderState(Number(e.target.value));
+    });
+
+    // init
+    renderState(0);
+  </script>
 </body>
 </html>
