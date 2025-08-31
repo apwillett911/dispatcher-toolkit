@@ -5,21 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Circuit Warmup — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .strike-soft { text-decoration: line-through; text-decoration-thickness: 0.08em; text-decoration-color: rgba(100,116,139,.5); }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
     <a href="./index.html" class="text-blue-600 underline">&larr; Back to Fitness</a>
 
     <h1 class="mt-4 text-2xl font-bold">Circuit Warmup</h1>
-    <p class="mt-2 text-slate-600">Follow each movement in order. Tap “Start” to run a countdown for that step. Tapping “Start” again restarts the countdown.</p>
+    <p class="mt-2 text-slate-600">Tap <strong>Start</strong> to run the sequence. Each exercise counts down, with a short 5-second “Get ready” pause between items.</p>
 
-    <!-- Warmup steps -->
-    <div id="steps" class="mt-6 space-y-4"></div>
+    <!-- Runner -->
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow p-6 text-center">
+      <div class="text-sm text-slate-500">
+        <span id="progress">Not started</span>
+      </div>
+
+      <h2 id="phase" class="mt-2 text-2xl font-bold">Ready</h2>
+      <p id="title" class="mt-1 text-base font-medium text-slate-700">—</p>
+
+      <div class="mt-4">
+        <span id="count" class="text-6xl font-mono text-blue-700">0</span>
+        <div id="subcount" class="mt-1 text-xs text-slate-500"></div>
+      </div>
+
+      <div class="mt-6 flex justify-center gap-3">
+        <button id="startBtn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">Start</button>
+        <button id="pauseBtn" type="button" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-md text-sm hover:bg-slate-300">Pause</button>
+        <button id="resetBtn" type="button" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-md text-sm hover:bg-slate-200">Reset</button>
+      </div>
+    </section>
+
+    <!-- Full list -->
+    <section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow">
+      <div class="px-5 py-4 border-b border-slate-200">
+        <h3 class="text-lg font-semibold">Warmup sequence</h3>
+        <p class="text-sm text-slate-500">Current step is highlighted. Completed steps are crossed out.</p>
+      </div>
+      <ol id="list" class="p-5 space-y-2"></ol>
+    </section>
   </main>
 
   <script>
-    // Warmup sequence
-    const steps = [
+    // --- Config ---
+    const REST_SECS = 5; // “Get ready” pause between exercises
+    const STEPS = [
       { name: "Knee Hug to Lunge; Jog back", time: 30 },
       { name: "Catchers Squat to Hamstring Stretch; Jog back", time: 30 },
       { name: "Step Over the Fence Forward; Skip back", time: 30 },
@@ -30,55 +61,157 @@
       { name: "Shin Box Hip Extension", time: 30 }
     ];
 
-    const container = document.getElementById("steps");
+    // --- State ---
+    // mode: 'idle' | 'exercise' | 'rest' | 'done'
+    let mode = 'idle';
+    let idx = 0;                 // current exercise index
+    let remaining = 0;           // seconds remaining in current phase
+    let timerId = null;          // single interval
 
-    steps.forEach((step, i) => {
-      const card = document.createElement("div");
-      card.className = "bg-white rounded-xl shadow p-4 border border-slate-200";
+    // --- DOM ---
+    const progressEl = document.getElementById('progress');
+    const phaseEl    = document.getElementById('phase');
+    const titleEl    = document.getElementById('title');
+    const countEl    = document.getElementById('count');
+    const subcountEl = document.getElementById('subcount');
+    const listEl     = document.getElementById('list');
 
-      card.innerHTML = `
-        <h2 class="text-lg font-semibold">${i + 1}. ${step.name}</h2>
-        <p class="text-sm text-slate-600">Time: ${step.time} seconds</p>
-        <div class="mt-2 flex items-center gap-2">
-          <button class="start-btn bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition text-sm">Start</button>
-          <span class="countdown text-slate-700 font-mono"></span>
+    const startBtn   = document.getElementById('startBtn');
+    const pauseBtn   = document.getElementById('pauseBtn');
+    const resetBtn   = document.getElementById('resetBtn');
+
+    // --- Build list once ---
+    STEPS.forEach((s, i) => {
+      const li = document.createElement('li');
+      li.id = `step-${i}`;
+      li.className = 'flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2';
+      li.innerHTML = `
+        <div class="flex-1">
+          <span class="font-medium">${i+1}. ${s.name}</span>
         </div>
+        <span class="text-xs text-slate-500 shrink-0">${s.time}s</span>
       `;
-
-      container.appendChild(card);
-
-      const btn = card.querySelector(".start-btn");
-      const countdown = card.querySelector(".countdown");
-
-      // Keep exactly ONE interval per card
-      let intervalId = null;
-
-      const startCountdown = () => {
-        // If a countdown is already running, clear it first
-        if (intervalId !== null) {
-          clearInterval(intervalId);
-          intervalId = null;
-        }
-
-        let remaining = step.time;
-        countdown.textContent = remaining + "s";
-        btn.textContent = "Restart";
-
-        intervalId = setInterval(() => {
-          remaining--;
-          if (remaining > 0) {
-            countdown.textContent = remaining + "s";
-          } else {
-            clearInterval(intervalId);
-            intervalId = null;
-            countdown.textContent = "Done!";
-            btn.textContent = "Start";
-          }
-        }, 1000);
-      };
-
-      btn.addEventListener("click", startCountdown);
+      listEl.appendChild(li);
     });
+
+    // --- Helpers ---
+    function setMode(newMode) {
+      mode = newMode;
+      updateUI();
+    }
+
+    function startInterval() {
+      if (timerId) return;
+      timerId = setInterval(() => {
+        if (remaining > 0) {
+          remaining--;
+          updateUI();
+          if (remaining === 0) advance();
+        }
+      }, 1000);
+    }
+
+    function stopInterval() {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    function startSequence() {
+      // If already running and paused, do nothing special; Start just resumes
+      if (mode === 'idle' || mode === 'done') {
+        idx = 0;
+        remaining = STEPS[0].time;
+        setMode('exercise');
+      }
+      startInterval();
+    }
+
+    function pauseSequence() {
+      stopInterval();
+    }
+
+    function resetSequence() {
+      stopInterval();
+      idx = 0;
+      remaining = 0;
+      setMode('idle');
+    }
+
+    function advance() {
+      // Called when current phase hits 0
+      if (mode === 'exercise') {
+        // Finished an exercise
+        if (idx < STEPS.length - 1) {
+          // Go to rest phase before next exercise
+          remaining = REST_SECS;
+          setMode('rest');
+        } else {
+          // Last exercise finished
+          setMode('done');
+          stopInterval();
+        }
+      } else if (mode === 'rest') {
+        // Move to next exercise
+        idx++;
+        remaining = STEPS[idx].time;
+        setMode('exercise');
+      }
+    }
+
+    function updateUI() {
+      // Progress text
+      if (mode === 'idle') {
+        progressEl.textContent = 'Not started';
+      } else if (mode === 'done') {
+        progressEl.textContent = `Complete • ${STEPS.length}/${STEPS.length}`;
+      } else {
+        progressEl.textContent = `Exercise ${idx+1} of ${STEPS.length}`;
+      }
+
+      // Phase & titles
+      if (mode === 'idle') {
+        phaseEl.textContent = 'Ready';
+        titleEl.textContent = 'Press Start to begin';
+        countEl.textContent = '0';
+        subcountEl.textContent = '';
+      } else if (mode === 'exercise') {
+        phaseEl.textContent = 'GO';
+        titleEl.textContent = STEPS[idx].name;
+        countEl.textContent = remaining.toString();
+        const next = (idx < STEPS.length - 1) ? `Next: ${STEPS[idx+1].name}` : 'Last one!';
+        subcountEl.textContent = next;
+      } else if (mode === 'rest') {
+        phaseEl.textContent = 'Get ready';
+        titleEl.textContent = `Up next: ${STEPS[idx+1].name}`;
+        countEl.textContent = remaining.toString();
+        subcountEl.textContent = `${STEPS[idx+1].time}s`;
+      } else if (mode === 'done') {
+        phaseEl.textContent = 'Done!';
+        titleEl.textContent = 'Warmup complete';
+        countEl.textContent = '0';
+        subcountEl.textContent = '';
+      }
+
+      // List highlighting
+      STEPS.forEach((_, i) => {
+        const li = document.getElementById(`step-${i}`);
+        li.className = 'flex items-start justify-between gap-3 rounded-lg border px-3 py-2 ' +
+          (i < idx ? 'border-slate-200 bg-slate-50 text-slate-400 strike-soft'
+                   : i === idx && (mode === 'exercise')
+                   ? 'border-blue-600 bg-blue-50'
+                   : 'border-slate-200 bg-white');
+      });
+    }
+
+    // --- Wire buttons ---
+    startBtn.addEventListener('click', startSequence);
+    pauseBtn.addEventListener('click', pauseSequence);
+    resetBtn.addEventListener('click', resetSequence);
+
+    // Init UI
+    updateUI();
   </script>
 </body>
 </html>
