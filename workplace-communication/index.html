@@ -3,14 +3,273 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Workplace Communication — Dispatcher Toolkit</title>
+  <title>EI Snapshot — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .btn { @apply border rounded-md px-3 py-1.5 text-sm transition; }
+    .btn-base { @apply border-slate-200 bg-white hover:bg-slate-50; }
+    .btn-on  { @apply border-blue-600 bg-blue-50 text-blue-800; }
+    .pill    { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border; }
+    .pill-ok { @apply border-emerald-600 text-emerald-800 bg-emerald-50; }
+    .strike-soft { text-decoration: line-through; text-decoration-thickness: 0.08em; text-decoration-color: rgba(100,116,139,.6); }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <a href="../index.html" class="text-blue-600 underline">&larr; Back</a>
-    <h1 class="mt-4 text-2xl font-bold">Fitness &amp; Nutrition</h1>
-    <p class="mt-2 text-slate-600">Tools coming soon: Circuit Warmup, Push/Pull Splits.</p>
+    <a href="../index.html" class="text-blue-600 underline">&larr; Back to Home</a>
+
+    <h1 class="mt-4 text-2xl font-bold">EI Snapshot</h1>
+    <p class="mt-2 text-slate-600">
+      Emotional intelligence matters in a 9-1-1 center. Calls arrive hot; emotions run higher than facts; and teamwork
+      is the air you breathe. Strong EI helps you steady yourself, hear what isn’t said, defuse escalation, and keep the
+      hand-offs clean. Take this 60-second pulse and get one concrete practice for your next shift.
+    </p>
+
+    <!-- Quiz -->
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="text-lg font-semibold">6 quick items</h2>
+        <span class="text-xs text-slate-500">Rate 1–5 (1 = rarely, 5 = consistently)</span>
+      </div>
+
+      <div id="quiz" class="p-5 space-y-5">
+        <!-- Questions will be injected -->
+      </div>
+
+      <div class="px-5 pb-5 flex flex-wrap gap-2">
+        <button id="submitBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Show Snapshot</button>
+        <button id="resetBtn" class="bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm hover:bg-slate-300">Reset</button>
+        <span id="incompleteNote" class="text-xs text-rose-600 hidden">Please answer all items.</span>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results" class="mt-6 bg-white rounded-2xl border border-slate-200 shadow hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Your EI Snapshot</h2>
+        <span id="savedTag" class="pill pill-ok hidden">Saved</span>
+      </div>
+
+      <div class="p-5">
+        <h3 class="font-semibold">Strengths</h3>
+        <ul id="strengths" class="mt-2 list-disc ml-5 text-sm text-slate-800 space-y-1"></ul>
+
+        <div class="mt-5">
+          <h3 class="font-semibold">One practice for your next shift</h3>
+          <p id="practice" class="mt-2 text-sm text-slate-700"></p>
+          <div class="mt-3 flex gap-2">
+            <button id="copyBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Copy</button>
+            <span id="copied" class="text-xs text-green-600 hidden">Copied!</span>
+          </div>
+        </div>
+
+        <div class="mt-5 text-xs text-slate-500">
+          Tip: Rotate practices across shifts to build range. You can reset and retake anytime.
+        </div>
+      </div>
+    </section>
   </main>
+
+  <script>
+    const STORAGE_KEY = 'dt_wc_ei_snapshot_v1';
+
+    // 6 facets with dispatcher-specific items
+    const ITEMS = [
+      {
+        id: 'self_awareness',
+        facet: 'Self-Awareness',
+        text: 'When I feel flooded on a call, I notice it quickly and name it (e.g., “I’m getting amped”).'
+      },
+      {
+        id: 'self_regulation',
+        facet: 'Self-Regulation',
+        text: 'Under pressure, I slow my speech and hit the policy beats instead of speeding up or skipping steps.'
+      },
+      {
+        id: 'empathy',
+        facet: 'Empathy',
+        text: 'I can reflect a caller’s emotion (fear/anger/confusion) in one short phrase without taking it on.'
+      },
+      {
+        id: 'listening',
+        facet: 'Listening',
+        text: 'I paraphrase and confirm the actionable detail (“So you’re on SE 82nd & Stark?”) before moving on.'
+      },
+      {
+        id: 'team_skills',
+        facet: 'Team Skills',
+        text: 'I keep hand-offs crisp (what, where, status) and avoid side-talk that muddies the channel.'
+      },
+      {
+        id: 'situational_awareness',
+        facet: 'Situational Awareness',
+        text: 'I notice when the room is heating up (tone, posture, errors) and help nudge it back to steady.'
+      }
+    ];
+
+    // Practice suggestions keyed to facet (shown for the lowest facet)
+    const PRACTICES = {
+      'Self-Awareness': 'Before each high-stakes call, do a 3-second check: “Body? Breath? Bias?” Relax jaw, exhale once, and name any impulse.',
+      'Self-Regulation': 'Use a cadence cue: short sentences + one beat of silence before the next instruction. It slows you and calms the caller.',
+      'Empathy': 'Add one emotion label per call: “I hear you’re scared—stay with me.” Keep it 6–8 words, then pivot to action.',
+      'Listening': 'Paraphrase location first, then repeat the most critical noun/verb. Example: “SE 82nd & Stark — you’re seeing smoke, not flames?”',
+      'Team Skills': 'At hand-off, use the 3-beat: WHAT (call type), WHERE (verified), STATUS (units/risks). No extras.',
+      'Situational Awareness': 'Every 20 minutes, scan the room: volume, speed, error rate. If rising, suggest a 30-second reset or rotate tasks.'
+    };
+
+    // Build quiz UI
+    const quizEl = document.getElementById('quiz');
+    ITEMS.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'bg-white rounded-xl border border-slate-200 p-4';
+
+      row.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="text-sm text-slate-500">${idx+1}/6 • ${item.facet}</div>
+            <div class="mt-1 font-medium">${item.text}</div>
+          </div>
+          <div class="shrink-0">
+            <div class="flex gap-1" role="group" aria-label="Rate ${item.facet}">
+              ${[1,2,3,4,5].map(n => `
+                <button class="btn btn-base score-btn" data-id="${item.id}" data-facet="${item.facet}" data-score="${n}" aria-pressed="false">${n}</button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      quizEl.appendChild(row);
+    });
+
+    // Local state
+    let scores = {}; // id -> 1..5
+    const saved = loadSaved();
+    if (saved && saved.answers) {
+      scores = saved.answers;
+      // render saved selections
+      document.querySelectorAll('.score-btn').forEach(btn => {
+        const id = btn.dataset.id;
+        const val = scores[id];
+        if (val && Number(btn.dataset.score) === Number(val)) {
+          btn.classList.remove('btn-base');
+          btn.classList.add('btn-on');
+          btn.setAttribute('aria-pressed', 'true');
+        }
+      });
+      if (saved.results) showResults(saved.results, true);
+    }
+
+    // Button behavior: toggle within each 1–5 row
+    document.querySelectorAll('.score-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const all = [...document.querySelectorAll(`.score-btn[data-id="${id}"]`)];
+        // clear row
+        all.forEach(b => {
+          b.classList.remove('btn-on');
+          b.classList.add('btn-base');
+          b.setAttribute('aria-pressed','false');
+        });
+        // set this
+        btn.classList.remove('btn-base');
+        btn.classList.add('btn-on');
+        btn.setAttribute('aria-pressed','true');
+        scores[id] = Number(btn.dataset.score);
+      });
+    });
+
+    // Compute & show
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      // validate 6 items
+      const ids = ITEMS.map(i => i.id);
+      const complete = ids.every(id => Number.isInteger(scores[id]));
+      const note = document.getElementById('incompleteNote');
+      if (!complete) { note.classList.remove('hidden'); return; }
+      note.classList.add('hidden');
+
+      // roll up by facet (1 item each for now, but future-proofed)
+      const byFacet = {};
+      ITEMS.forEach(i => {
+        byFacet[i.facet] = (byFacet[i.facet] || 0) + (scores[i.id] || 0);
+      });
+
+      // strengths = top 2 facets
+      const sorted = Object.entries(byFacet).sort((a,b) => b[1]-a[1]);
+      const strengths = sorted.slice(0,2).map(([f,_]) => f);
+
+      // lowest facet → practice
+      const lowest = sorted[sorted.length-1][0];
+      const practice = PRACTICES[lowest];
+
+      const results = { strengths, lowest, practice, byFacet };
+
+      // show, save
+      showResults(results, false);
+      saveSaved({ answers: scores, results });
+    });
+
+    // Copy & reset
+    document.getElementById('copyBtn')?.addEventListener('click', async () => {
+      const text = buildCopyText();
+      try {
+        await navigator.clipboard.writeText(text);
+        const c = document.getElementById('copied');
+        c.classList.remove('hidden');
+        setTimeout(()=>c.classList.add('hidden'), 1400);
+      } catch { alert('Could not copy.'); }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      scores = {};
+      // clear UI
+      document.querySelectorAll('.score-btn').forEach(b => {
+        b.classList.remove('btn-on');
+        b.classList.add('btn-base');
+        b.setAttribute('aria-pressed','false');
+      });
+      // hide results
+      document.getElementById('results').classList.add('hidden');
+      // storage
+      localStorage.removeItem(STORAGE_KEY);
+    });
+
+    function showResults(results, fromStorage) {
+      const ul = document.getElementById('strengths');
+      ul.innerHTML = '';
+      results.strengths.forEach(f => {
+        const li = document.createElement('li');
+        li.textContent = f;
+        ul.appendChild(li);
+      });
+      document.getElementById('practice').textContent = results.practice;
+      document.getElementById('results').classList.remove('hidden');
+      const savedTag = document.getElementById('savedTag');
+      if (fromStorage) {
+        savedTag.classList.remove('hidden');
+      } else {
+        savedTag.classList.add('hidden');
+      }
+      // store text for copy
+      window.__eiCopyText = buildCopyText(results);
+    }
+
+    function buildCopyText(results) {
+      const r = results || loadSaved()?.results;
+      if (!r) return 'EI Snapshot';
+      return [
+        'EI Snapshot — Dispatcher Toolkit',
+        `Strengths: ${r.strengths.join(', ')}`,
+        `Practice for next shift: ${r.practice}`
+      ].join('\n');
+    }
+
+    function loadSaved() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null; }
+      catch { return null; }
+    }
+    function saveSaved(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+  </script>
 </body>
 </html>
