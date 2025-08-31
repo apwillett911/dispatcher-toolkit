@@ -3,14 +3,104 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Liability Risks — Dispatcher Toolkit</title>
+  <title>Red Flag Scanner — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <a href="../index.html" class="text-blue-600 underline">&larr; Back</a>
-    <h1 class="mt-4 text-2xl font-bold">Fitness &amp; Nutrition</h1>
-    <p class="mt-2 text-slate-600">Tools coming soon: Circuit Warmup, Push/Pull Splits.</p>
+    <a href="../index.html" class="text-blue-600 underline">&larr; Back to Home</a>
+
+    <h1 class="mt-4 text-2xl font-bold">Red Flag Scanner</h1>
+    <p class="mt-2 text-slate-600">
+      Civil liability often comes down to preventable missteps. Tick any red flags you’ve noticed in your own work, and you’ll see the matching safeguard to bring yourself back into the safe zone.
+    </p>
+
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow p-5">
+      <h2 class="text-lg font-semibold mb-4">Select any red flags</h2>
+      <form id="scanner" class="space-y-3">
+        <!-- checkboxes injected -->
+      </form>
+    </section>
+
+    <section id="results" class="mt-6 hidden bg-white rounded-2xl border border-slate-200 shadow p-5">
+      <h2 class="text-lg font-semibold">Safeguards</h2>
+      <ul id="safeguards" class="mt-3 list-disc ml-5 text-sm text-slate-700 space-y-2"></ul>
+    </section>
   </main>
+
+  <script>
+    const FLAGS = [
+      {
+        id: "rules",
+        text: "Disobeying or bending agency rules",
+        safe: "Stick to agency policy. Clear policy adherence is your best shield for indemnification."
+      },
+      {
+        id: "inattention",
+        text: "Inattention to work (e.g., missing transmissions, transposing numbers)",
+        safe: "Slow down and confirm: repeat-backs, second checks, and posture resets reduce misses."
+      },
+      {
+        id: "sop",
+        text: "Not following Standard Operating Procedures (e.g., guessing at priorities)",
+        safe: "Review SOP quick-cards and ask when unsure. Guessing creates liability; procedures protect you."
+      },
+      {
+        id: "judgment",
+        text: "Poor judgment (e.g., not asking enough questions, making assumptions)",
+        safe: "Run the mental checklist: who, what, where, when. Probe until essentials are verified."
+      },
+      {
+        id: "coverage",
+        text: "Taking chances (e.g., leaving console unattended)",
+        safe: "Never leave your console uncovered. Arrange relief or advise a supervisor first."
+      },
+      {
+        id: "horseplay",
+        text: "Horseplay or joking while on calls",
+        safe: "Treat every call as serious; save banter for after. Professional tone protects caller trust and record."
+      },
+      {
+        id: "burnout",
+        text: "Burnout attitude (e.g., dismissing a call as 'nothing')",
+        safe: "Reset perspective: every call is urgent to the caller. Share stress with peers, don’t dump it on the call."
+      },
+      {
+        id: "docs",
+        text: "Inconsistent or missing documentation",
+        safe: "Document everything rigorously. If it isn’t written, it didn’t happen. Notes protect you."
+      }
+    ];
+
+    const form = document.getElementById('scanner');
+    const results = document.getElementById('results');
+    const list = document.getElementById('safeguards');
+
+    // build checklist
+    FLAGS.forEach(f => {
+      const row = document.createElement('div');
+      row.className = "flex items-start gap-2";
+      row.innerHTML = `
+        <input id="${f.id}" name="${f.id}" type="checkbox" class="mt-1 w-4 h-4 text-blue-600 border-slate-300 rounded">
+        <label for="${f.id}" class="text-sm text-slate-700">${f.text}</label>
+      `;
+      form.appendChild(row);
+    });
+
+    form.addEventListener('change', () => {
+      const chosen = FLAGS.filter(f => form[f.id].checked);
+      if (chosen.length === 0) {
+        results.classList.add('hidden');
+        return;
+      }
+      list.innerHTML = "";
+      chosen.forEach(f => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="font-semibold">${f.text}:</span> ${f.safe}`;
+        list.appendChild(li);
+      });
+      results.classList.remove('hidden');
+    });
+  </script>
 </body>
 </html>
