@@ -3,14 +3,165 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Diversity — Dispatcher Toolkit</title>
+  <title>Assumption Flip — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <a href="../index.html" class="text-blue-600 underline">&larr; Back</a>
-    <h1 class="mt-4 text-2xl font-bold">Fitness &amp; Nutrition</h1>
-    <p class="mt-2 text-slate-600">Tools coming soon: Circuit Warmup, Push/Pull Splits.</p>
+    <a href="../index.html" class="text-blue-600 underline">&larr; Back to Home</a>
+
+    <h1 class="mt-4 text-2xl font-bold">Assumption Flip</h1>
+    <p class="mt-2 text-slate-600">
+      Everyday shortcuts in thinking can turn into unfair assumptions about race, age, gender, disability, religion,
+      accent, immigration, or veteran status. Tap <strong>Flip</strong> to see a more accurate frame plus a small behavior you can use on shift.
+    </p>
+
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Assumption</h2>
+        <div class="text-xs text-slate-500"><span id="idx">1</span>/<span id="total">12</span></div>
+      </div>
+
+      <div class="p-5">
+        <p id="assumption" class="text-base font-medium"></p>
+
+        <div id="flipArea" class="mt-5 hidden">
+          <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
+            <h3 class="font-semibold text-emerald-900">Reality</h3>
+            <p id="reality" class="mt-1 text-sm text-emerald-900/90 leading-relaxed"></p>
+          </div>
+
+          <div class="mt-3 rounded-xl bg-blue-50 border border-blue-200 p-4">
+            <h3 class="font-semibold text-blue-900">Try this instead</h3>
+            <p id="action" class="mt-1 text-sm text-blue-900/90 leading-relaxed"></p>
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-2">
+          <button id="flipBtn" type="button" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Flip</button>
+          <button id="nextBtn" type="button" class="bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm hover:bg-slate-300">Next</button>
+          <button id="shuffleBtn" type="button" class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-md text-sm hover:bg-slate-200">Shuffle</button>
+        </div>
+      </div>
+    </section>
+
+    <p class="mt-4 text-xs text-slate-500">
+      Note: Keep it person-first. When in doubt, ask rather than assume.
+    </p>
   </main>
+
+  <script>
+    // Assumptions are phrased to avoid repeating harmful stereotypes about specific protected groups.
+    // Each item: {a: assumption, r: reality (counter), t: behavior tip}
+    const ITEMS = [
+      {
+        a: "Certain races or ethnicities are more likely to be dangerous.",
+        r: "Race does not determine behavior. Differences in outcomes are driven by many factors (context, environment, opportunity). Treat risk as situational, not identity-based.",
+        t: "Anchor on behavior + facts: What is happening right now? What was actually said or done? Avoid identity-based inferences."
+      },
+      {
+        a: "Older adults can’t handle technology or fast instructions.",
+        r: "Processing speed varies person to person. Many older adults adapt quickly when instructions are clear and paced.",
+        t: "Use chunking: one short instruction at a time. Confirm understanding, not age."
+      },
+      {
+        a: "Women are less decisive under stress.",
+        r: "Decision style is individual, not gendered. Under stress, anyone benefits from clear prompts and structure.",
+        t: "Give the same structured prompts to everyone: state the action, confirm, then move on."
+      },
+      {
+        a: "People with disabilities will always need extra time or can’t follow complex directions.",
+        r: "Disability is diverse. Many folks have strategies that make them highly effective with the right format.",
+        t: "Offer options: speak plainly, avoid jargon; if needed, repeat once and confirm key detail. Ask what helps."
+      },
+      {
+        a: "Religious minorities will resist certain instructions or want special treatment.",
+        r: "Religious belief doesn’t predict compliance. Most people will follow clear safety instructions when treated respectfully.",
+        t: "Lead with safety and respect. If a constraint comes up, problem-solve without judgment."
+      },
+      {
+        a: "A strong accent means they won’t understand me (or I can’t understand them).",
+        r: "Accent ≠ comprehension. With simple phrasing and confirmation, mutual understanding is very achievable.",
+        t: "Slow your pace, use concrete words, verify addresses twice. Avoid idioms; repeat key nouns/verbs."
+      },
+      {
+        a: "Immigrants may be hiding something or less trustworthy.",
+        r: "Trustworthiness isn’t tied to immigration status. Fear of authority can affect tone, not truthfulness.",
+        t: "Normalize: “It’s okay—you’re doing the right thing calling.” Stick to facts; avoid questions that imply suspicion based on status."
+      },
+      {
+        a: "Men don’t need emotional acknowledgment—just the facts.",
+        r: "Emotion cues help *everyone* de-escalate, regardless of gender.",
+        t: "Use one brief validation before the instruction: “I hear you—it’s scary. Here’s what we’ll do…”"
+      },
+      {
+        a: "Young adults are unreliable or careless under pressure.",
+        r: "Reliability is trained and supported, not age-determined.",
+        t: "Give explicit next steps and a quick recap. Reinforce success: “That’s it—keep doing exactly that.”"
+      },
+      {
+        a: "Veterans will be rigid or aggressive in tense situations.",
+        r: "Veterans’ responses vary widely; many bring discipline and calm under pressure.",
+        t: "Offer clear roles and ask for preferences: “Would you like step-by-step or big picture first?”"
+      },
+      {
+        a: "People from certain neighborhoods are more likely to be lying.",
+        r: "Neighborhood is a context, not a character test. Bias creeps in when we overgeneralize from location.",
+        t: "Verify information the same way everywhere: address, landmarks, repeat-back confirmation."
+      },
+      {
+        a: "If someone sounds ‘different,’ they won’t follow safety directions.",
+        r: "Compliance improves with clarity, not similarity. Most people follow when they feel respected and understand the ask.",
+        t: "Use simple, specific verbs. Confirm one key action at a time. Thank them for cooperating."
+      }
+    ];
+
+    // Minimal state
+    let order = [...ITEMS.keys()];
+    let i = 0;
+    const idxEl = document.getElementById('idx');
+    const totalEl = document.getElementById('total');
+    const assumptionEl = document.getElementById('assumption');
+    const realityEl = document.getElementById('reality');
+    const actionEl = document.getElementById('action');
+    const flipArea = document.getElementById('flipArea');
+    const flipBtn = document.getElementById('flipBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+
+    totalEl.textContent = ITEMS.length;
+
+    function render() {
+      const item = ITEMS[order[i]];
+      idxEl.textContent = (i + 1).toString();
+      assumptionEl.textContent = item.a;
+      realityEl.textContent = item.r;
+      actionEl.textContent = item.t;
+      flipArea.classList.add('hidden');
+    }
+
+    function shuffle() {
+      for (let j = order.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [order[j], order[k]] = [order[k], order[j]];
+      }
+      i = 0;
+      render();
+    }
+
+    flipBtn.addEventListener('click', () => {
+      flipArea.classList.remove('hidden');
+    });
+
+    nextBtn.addEventListener('click', () => {
+      i = (i + 1) % order.length;
+      render();
+    });
+
+    shuffleBtn.addEventListener('click', shuffle);
+
+    // init
+    render();
+  </script>
 </body>
 </html>
