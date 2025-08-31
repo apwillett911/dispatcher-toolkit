@@ -6,11 +6,6 @@
   <title>EI Snapshot — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .btn { @apply border rounded-md px-3 py-1.5 text-sm transition; }
-    .btn-base { @apply border-slate-200 bg-white hover:bg-slate-50; }
-    .btn-on  { @apply border-blue-600 bg-blue-50 text-blue-800; }
-    .pill    { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border; }
-    .pill-ok { @apply border-emerald-600 text-emerald-800 bg-emerald-50; }
     .strike-soft { text-decoration: line-through; text-decoration-thickness: 0.08em; text-decoration-color: rgba(100,116,139,.6); }
   </style>
 </head>
@@ -32,13 +27,11 @@
         <span class="text-xs text-slate-500">Rate 1–5 (1 = rarely, 5 = consistently)</span>
       </div>
 
-      <div id="quiz" class="p-5 space-y-5">
-        <!-- Questions will be injected -->
-      </div>
+      <div id="quiz" class="p-5 space-y-5"><!-- rows injected --></div>
 
-      <div class="px-5 pb-5 flex flex-wrap gap-2">
-        <button id="submitBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Show Snapshot</button>
-        <button id="resetBtn" class="bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm hover:bg-slate-300">Reset</button>
+      <div class="px-5 pb-5 flex flex-wrap gap-2 items-center">
+        <button id="submitBtn" type="button" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Show Snapshot</button>
+        <button id="resetBtn" type="button" class="bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm hover:bg-slate-300">Reset</button>
         <span id="incompleteNote" class="text-xs text-rose-600 hidden">Please answer all items.</span>
       </div>
     </section>
@@ -47,7 +40,7 @@
     <section id="results" class="mt-6 bg-white rounded-2xl border border-slate-200 shadow hidden">
       <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
         <h2 class="text-lg font-semibold">Your EI Snapshot</h2>
-        <span id="savedTag" class="pill pill-ok hidden">Saved</span>
+        <span id="savedTag" class="hidden rounded-full px-2 py-0.5 text-xs border border-emerald-600 text-emerald-800 bg-emerald-50">Saved</span>
       </div>
 
       <div class="p-5">
@@ -57,8 +50,8 @@
         <div class="mt-5">
           <h3 class="font-semibold">One practice for your next shift</h3>
           <p id="practice" class="mt-2 text-sm text-slate-700"></p>
-          <div class="mt-3 flex gap-2">
-            <button id="copyBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Copy</button>
+          <div class="mt-3 flex gap-2 items-center">
+            <button id="copyBtn" type="button" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">Copy</button>
             <span id="copied" class="text-xs text-green-600 hidden">Copied!</span>
           </div>
         </div>
@@ -71,205 +64,180 @@
   </main>
 
   <script>
-    const STORAGE_KEY = 'dt_wc_ei_snapshot_v1';
+    const STORAGE_KEY = 'dt_wc_ei_snapshot_v2';
 
-    // 6 facets with dispatcher-specific items
     const ITEMS = [
-      {
-        id: 'self_awareness',
-        facet: 'Self-Awareness',
-        text: 'When I feel flooded on a call, I notice it quickly and name it (e.g., “I’m getting amped”).'
-      },
-      {
-        id: 'self_regulation',
-        facet: 'Self-Regulation',
-        text: 'Under pressure, I slow my speech and hit the policy beats instead of speeding up or skipping steps.'
-      },
-      {
-        id: 'empathy',
-        facet: 'Empathy',
-        text: 'I can reflect a caller’s emotion (fear/anger/confusion) in one short phrase without taking it on.'
-      },
-      {
-        id: 'listening',
-        facet: 'Listening',
-        text: 'I paraphrase and confirm the actionable detail (“So you’re on SE 82nd & Stark?”) before moving on.'
-      },
-      {
-        id: 'team_skills',
-        facet: 'Team Skills',
-        text: 'I keep hand-offs crisp (what, where, status) and avoid side-talk that muddies the channel.'
-      },
-      {
-        id: 'situational_awareness',
-        facet: 'Situational Awareness',
-        text: 'I notice when the room is heating up (tone, posture, errors) and help nudge it back to steady.'
-      }
+      { id: 'self_awareness',       facet: 'Self-Awareness',        text: 'When I feel flooded on a call, I notice it quickly and name it (e.g., “I’m getting amped”).' },
+      { id: 'self_regulation',      facet: 'Self-Regulation',       text: 'Under pressure, I slow my speech and hit the policy beats instead of speeding up or skipping steps.' },
+      { id: 'empathy',              facet: 'Empathy',               text: 'I can reflect a caller’s emotion (fear/anger/confusion) in one short phrase without taking it on.' },
+      { id: 'listening',            facet: 'Listening',             text: 'I paraphrase and confirm the actionable detail (“So you’re on SE 82nd & Stark?”) before moving on.' },
+      { id: 'team_skills',          facet: 'Team Skills',           text: 'I keep hand-offs crisp (what, where, status) and avoid side-talk that muddies the channel.' },
+      { id: 'situational_awareness',facet: 'Situational Awareness', text: 'I notice when the room is heating up (tone, posture, errors) and help nudge it back to steady.' }
     ];
 
-    // Practice suggestions keyed to facet (shown for the lowest facet)
     const PRACTICES = {
-      'Self-Awareness': 'Before each high-stakes call, do a 3-second check: “Body? Breath? Bias?” Relax jaw, exhale once, and name any impulse.',
-      'Self-Regulation': 'Use a cadence cue: short sentences + one beat of silence before the next instruction. It slows you and calms the caller.',
-      'Empathy': 'Add one emotion label per call: “I hear you’re scared—stay with me.” Keep it 6–8 words, then pivot to action.',
-      'Listening': 'Paraphrase location first, then repeat the most critical noun/verb. Example: “SE 82nd & Stark — you’re seeing smoke, not flames?”',
-      'Team Skills': 'At hand-off, use the 3-beat: WHAT (call type), WHERE (verified), STATUS (units/risks). No extras.',
+      'Self-Awareness':        'Before each high-stakes call, do a 3-second check: “Body? Breath? Bias?” Relax jaw, exhale once, and name any impulse.',
+      'Self-Regulation':       'Use a cadence cue: short sentences + one beat of silence before the next instruction. It slows you and calms the caller.',
+      'Empathy':               'Add one emotion label per call: “I hear you’re scared—stay with me.” Keep it 6–8 words, then pivot to action.',
+      'Listening':             'Paraphrase location first, then repeat the most critical noun/verb. Example: “SE 82nd & Stark — you’re seeing smoke, not flames?”',
+      'Team Skills':           'At hand-off, use the 3-beat: WHAT (call type), WHERE (verified), STATUS (units/risks). No extras.',
       'Situational Awareness': 'Every 20 minutes, scan the room: volume, speed, error rate. If rising, suggest a 30-second reset or rotate tasks.'
     };
 
-    // Build quiz UI
     const quizEl = document.getElementById('quiz');
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn  = document.getElementById('resetBtn');
+    const resultsEl = document.getElementById('results');
+    const strengthsEl = document.getElementById('strengths');
+    const practiceEl  = document.getElementById('practice');
+    const savedTag    = document.getElementById('savedTag');
+    const incompleteNote = document.getElementById('incompleteNote');
+    const copyBtn     = document.getElementById('copyBtn');
+    const copiedNote  = document.getElementById('copied');
+
+    // load/save
+    const loadSaved = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null; } catch { return null; } };
+    const saveSaved = (data) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const clearSaved = () => localStorage.removeItem(STORAGE_KEY);
+
+    // state
+    let scores = {};         // id -> 1..5
+    let activeRowIndex = 0;  // for keyboard input
+
+    // build rows
     ITEMS.forEach((item, idx) => {
       const row = document.createElement('div');
-      row.className = 'bg-white rounded-xl border border-slate-200 p-4';
+      row.className = 'bg-white rounded-xl border border-slate-200 p-4 outline-none';
+      row.tabIndex = 0; // focusable for keyboard 1-5
+      row.dataset.index = idx;
 
       row.innerHTML = `
         <div class="flex items-start justify-between gap-4">
-          <div>
+          <div class="cursor-pointer select-none">
             <div class="text-sm text-slate-500">${idx+1}/6 • ${item.facet}</div>
             <div class="mt-1 font-medium">${item.text}</div>
           </div>
           <div class="shrink-0">
             <div class="flex gap-1" role="group" aria-label="Rate ${item.facet}">
               ${[1,2,3,4,5].map(n => `
-                <button class="btn btn-base score-btn" data-id="${item.id}" data-facet="${item.facet}" data-score="${n}" aria-pressed="false">${n}</button>
+                <button type="button"
+                        class="score-btn border border-slate-200 bg-white hover:bg-slate-50 rounded-md px-3 py-1.5 text-sm"
+                        data-id="${item.id}" data-facet="${item.facet}" data-score="${n}" aria-pressed="false">${n}</button>
               `).join('')}
             </div>
           </div>
         </div>
       `;
       quizEl.appendChild(row);
+
+      // remember which row is active when focused/clicked
+      row.addEventListener('focus', () => { activeRowIndex = idx; });
+      row.addEventListener('click', () => { activeRowIndex = idx; });
+
+      // wire buttons now (they exist inside row)
+      row.querySelectorAll('.score-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectScore(item.id, item.facet, Number(btn.dataset.score), row));
+      });
     });
 
-    // Local state
-    let scores = {}; // id -> 1..5
+    // restore if saved
     const saved = loadSaved();
-    if (saved && saved.answers) {
+    if (saved?.answers) {
       scores = saved.answers;
-      // render saved selections
-      document.querySelectorAll('.score-btn').forEach(btn => {
-        const id = btn.dataset.id;
-        const val = scores[id];
-        if (val && Number(btn.dataset.score) === Number(val)) {
-          btn.classList.remove('btn-base');
-          btn.classList.add('btn-on');
-          btn.setAttribute('aria-pressed', 'true');
-        }
+      // paint selections
+      ITEMS.forEach((item, idx) => {
+        const row = quizEl.querySelector(`div[data-index="${idx}"]`);
+        paintRowSelection(row, item.id, scores[item.id]);
       });
-      if (saved.results) showResults(saved.results, true);
+      if (saved.results) {
+        showResults(saved.results, true);
+      }
     }
 
-    // Button behavior: toggle within each 1–5 row
-    document.querySelectorAll('.score-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        const all = [...document.querySelectorAll(`.score-btn[data-id="${id}"]`)];
-        // clear row
-        all.forEach(b => {
-          b.classList.remove('btn-on');
-          b.classList.add('btn-base');
-          b.setAttribute('aria-pressed','false');
-        });
-        // set this
-        btn.classList.remove('btn-base');
-        btn.classList.add('btn-on');
-        btn.setAttribute('aria-pressed','true');
-        scores[id] = Number(btn.dataset.score);
+    // selection logic
+    function selectScore(id, facet, value, rowEl) {
+      scores[id] = value;
+      paintRowSelection(rowEl, id, value);
+    }
+
+    function paintRowSelection(rowEl, id, value) {
+      const btns = rowEl.querySelectorAll(`.score-btn[data-id="${id}"]`);
+      btns.forEach(b => {
+        const isOn = Number(b.dataset.score) === Number(value);
+        b.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        b.className = isOn
+          ? 'score-btn border-2 border-blue-600 bg-blue-50 text-blue-800 rounded-md px-3 py-1.5 text-sm'
+          : 'score-btn border border-slate-200 bg-white hover:bg-slate-50 rounded-md px-3 py-1.5 text-sm';
       });
-    });
+    }
 
-    // Compute & show
-    document.getElementById('submitBtn').addEventListener('click', () => {
-      // validate 6 items
-      const ids = ITEMS.map(i => i.id);
-      const complete = ids.every(id => Number.isInteger(scores[id]));
-      const note = document.getElementById('incompleteNote');
-      if (!complete) { note.classList.remove('hidden'); return; }
-      note.classList.add('hidden');
+    // compute + show
+    submitBtn.addEventListener('click', () => {
+      const complete = ITEMS.every(i => Number.isInteger(scores[i.id]));
+      if (!complete) { incompleteNote.classList.remove('hidden'); return; }
+      incompleteNote.classList.add('hidden');
 
-      // roll up by facet (1 item each for now, but future-proofed)
       const byFacet = {};
-      ITEMS.forEach(i => {
-        byFacet[i.facet] = (byFacet[i.facet] || 0) + (scores[i.id] || 0);
-      });
+      ITEMS.forEach(i => { byFacet[i.facet] = (byFacet[i.facet] || 0) + (scores[i.id] || 0); });
 
-      // strengths = top 2 facets
       const sorted = Object.entries(byFacet).sort((a,b) => b[1]-a[1]);
-      const strengths = sorted.slice(0,2).map(([f,_]) => f);
-
-      // lowest facet → practice
+      const strengths = sorted.slice(0,2).map(([f]) => f);
       const lowest = sorted[sorted.length-1][0];
       const practice = PRACTICES[lowest];
 
       const results = { strengths, lowest, practice, byFacet };
-
-      // show, save
       showResults(results, false);
       saveSaved({ answers: scores, results });
     });
 
-    // Copy & reset
-    document.getElementById('copyBtn')?.addEventListener('click', async () => {
-      const text = buildCopyText();
-      try {
-        await navigator.clipboard.writeText(text);
-        const c = document.getElementById('copied');
-        c.classList.remove('hidden');
-        setTimeout(()=>c.classList.add('hidden'), 1400);
-      } catch { alert('Could not copy.'); }
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      scores = {};
-      // clear UI
-      document.querySelectorAll('.score-btn').forEach(b => {
-        b.classList.remove('btn-on');
-        b.classList.add('btn-base');
-        b.setAttribute('aria-pressed','false');
-      });
-      // hide results
-      document.getElementById('results').classList.add('hidden');
-      // storage
-      localStorage.removeItem(STORAGE_KEY);
-    });
-
     function showResults(results, fromStorage) {
-      const ul = document.getElementById('strengths');
-      ul.innerHTML = '';
+      strengthsEl.innerHTML = '';
       results.strengths.forEach(f => {
         const li = document.createElement('li');
         li.textContent = f;
-        ul.appendChild(li);
+        strengthsEl.appendChild(li);
       });
-      document.getElementById('practice').textContent = results.practice;
-      document.getElementById('results').classList.remove('hidden');
-      const savedTag = document.getElementById('savedTag');
-      if (fromStorage) {
-        savedTag.classList.remove('hidden');
-      } else {
-        savedTag.classList.add('hidden');
-      }
-      // store text for copy
-      window.__eiCopyText = buildCopyText(results);
+      practiceEl.textContent = results.practice;
+      resultsEl.classList.remove('hidden');
+      savedTag.classList.toggle('hidden', !fromStorage);
     }
 
-    function buildCopyText(results) {
-      const r = results || loadSaved()?.results;
-      if (!r) return 'EI Snapshot';
-      return [
+    // copy / reset
+    copyBtn?.addEventListener('click', async () => {
+      const saved = loadSaved();
+      if (!saved?.results) return;
+      const text = [
         'EI Snapshot — Dispatcher Toolkit',
-        `Strengths: ${r.strengths.join(', ')}`,
-        `Practice for next shift: ${r.practice}`
+        `Strengths: ${saved.results.strengths.join(', ')}`,
+        `Practice for next shift: ${saved.results.practice}`
       ].join('\n');
-    }
+      try {
+        await navigator.clipboard.writeText(text);
+        copiedNote.classList.remove('hidden');
+        setTimeout(()=>copiedNote.classList.add('hidden'), 1400);
+      } catch { alert('Could not copy.'); }
+    });
 
-    function loadSaved() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null; }
-      catch { return null; }
-    }
-    function saveSaved(data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
+    resetBtn.addEventListener('click', () => {
+      scores = {};
+      clearSaved();
+      // clear UI
+      ITEMS.forEach((item, idx) => {
+        const row = quizEl.querySelector(`div[data-index="${idx}"]`);
+        paintRowSelection(row, item.id, null);
+      });
+      resultsEl.classList.add('hidden');
+      incompleteNote.classList.add('hidden');
+    });
+
+    // keyboard 1–5 on the focused row
+    document.addEventListener('keydown', (e) => {
+      if (!/^[1-5]$/.test(e.key)) return;
+      const idx = activeRowIndex;
+      const item = ITEMS[idx];
+      const row = quizEl.querySelector(`div[data-index="${idx}"]`);
+      selectScore(item.id, item.facet, Number(e.key), row);
+    });
   </script>
 </body>
 </html>
