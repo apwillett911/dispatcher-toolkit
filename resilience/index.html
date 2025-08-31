@@ -3,14 +3,161 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Resilience — Dispatcher Toolkit</title>
+  <title>Breathing Tools — Dispatcher Toolkit</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 font-sans">
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <a href="../index.html" class="text-blue-600 underline">&larr; Back</a>
-    <h1 class="mt-4 text-2xl font-bold">Fitness &amp; Nutrition</h1>
-    <p class="mt-2 text-slate-600">Tools coming soon: Circuit Warmup, Push/Pull Splits.</p>
+    <a href="../index.html" class="text-blue-600 underline">&larr; Back to Home</a>
+
+    <h1 class="mt-4 text-2xl font-bold">Breathing Tools</h1>
+    <p class="mt-2 text-slate-600">
+      Use structured breathing to steady your body and sharpen your focus. Select a technique, then tap Start to follow the prompts.
+    </p>
+
+    <!-- Tabs -->
+    <div class="mt-6 flex border-b border-slate-300 text-sm font-medium">
+      <button id="tab-box"    class="tab px-4 py-2 -mb-px border-b-2 border-blue-600 text-blue-700">Box Breathing</button>
+      <button id="tab-478"    class="tab px-4 py-2 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-700">4-7-8 Breathing</button>
+      <button id="tab-depth"  class="tab px-4 py-2 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-700">Breathing Depth Drill</button>
+    </div>
+
+    <!-- Timer Display -->
+    <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow p-6 text-center">
+      <h2 id="phase" class="text-3xl font-bold mb-2">Ready</h2>
+      <p id="count" class="text-5xl font-mono text-blue-700">0</p>
+      <p id="benefits" class="mt-4 text-sm text-slate-600"></p>
+
+      <div class="mt-6 flex justify-center gap-3">
+        <button id="startBtn"  type="button" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">Start</button>
+        <button id="pauseBtn"  type="button" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-md text-sm hover:bg-slate-300">Pause</button>
+        <button id="resetBtn"  type="button" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-md text-sm hover:bg-slate-200">Reset</button>
+      </div>
+    </section>
   </main>
+
+  <script>
+    // Technique definitions
+    const techniques = {
+      box: {
+        name: "Box Breathing",
+        phases: [
+          {label: "INHALE", secs: 4},
+          {label: "HOLD", secs: 4},
+          {label: "EXHALE", secs: 4},
+          {label: "HOLD", secs: 4}
+        ],
+        benefits: "Reduces stress and anxiety, improves focus, regulates breathing, and promotes relaxation."
+      },
+      "4-7-8": {
+        name: "4-7-8 Breathing",
+        phases: [
+          {label: "INHALE", secs: 4},
+          {label: "HOLD", secs: 7},
+          {label: "EXHALE", secs: 8}
+        ],
+        benefits: "Can lower stress and anxiety, improve heart and lung function, and support better sleep quality."
+      },
+      depth: {
+        name: "Breathing Depth Drill",
+        phases: [
+          {label: "INHALE", secs: 2},
+          {label: "HOLD", secs: 1},
+          {label: "EXHALE", secs: 2},
+          {label: "HOLD", secs: 2}
+        ],
+        benefits: "Promotes relaxation, boosts lung capacity, improves focus, and reduces anxiety."
+      }
+    };
+
+    // State
+    let current = "box";
+    let phaseIndex = 0;
+    let elapsed = 0;
+    let timer = null;
+
+    // Elements
+    const tabs = {
+      box: document.getElementById("tab-box"),
+      "4-7-8": document.getElementById("tab-478"),
+      depth: document.getElementById("tab-depth")
+    };
+    const phaseEl = document.getElementById("phase");
+    const countEl = document.getElementById("count");
+    const benefitsEl = document.getElementById("benefits");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // Functions
+    function setTechnique(key) {
+      current = key;
+      phaseIndex = 0;
+      elapsed = 0;
+      stopTimer();
+      render();
+      // highlight tab
+      for (const k in tabs) {
+        if (k === key) {
+          tabs[k].className = "tab px-4 py-2 -mb-px border-b-2 border-blue-600 text-blue-700";
+        } else {
+          tabs[k].className = "tab px-4 py-2 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+        }
+      }
+    }
+
+    function render() {
+      const t = techniques[current];
+      const p = t.phases[phaseIndex];
+      phaseEl.textContent = p ? p.label : "Ready";
+      countEl.textContent = elapsed.toString();
+      benefitsEl.textContent = t.benefits;
+    }
+
+    function tick() {
+      const t = techniques[current];
+      const p = t.phases[phaseIndex];
+      if (!p) return;
+      elapsed++;
+      countEl.textContent = elapsed.toString();
+      if (elapsed >= p.secs) {
+        // advance
+        phaseIndex = (phaseIndex + 1) % t.phases.length;
+        elapsed = 0;
+        render();
+      }
+    }
+
+    function startTimer() {
+      if (timer) return;
+      render();
+      timer = setInterval(tick, 1000);
+    }
+
+    function stopTimer() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function resetTimer() {
+      stopTimer();
+      phaseIndex = 0;
+      elapsed = 0;
+      render();
+    }
+
+    // Event listeners
+    tabs.box.addEventListener("click", () => setTechnique("box"));
+    tabs["4-7-8"].addEventListener("click", () => setTechnique("4-7-8"));
+    tabs.depth.addEventListener("click", () => setTechnique("depth"));
+    startBtn.addEventListener("click", startTimer);
+    pauseBtn.addEventListener("click", stopTimer);
+    resetBtn.addEventListener("click", resetTimer);
+
+    // init
+    render();
+  </script>
 </body>
 </html>
